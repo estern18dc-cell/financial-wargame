@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wargame Demo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e7e4d6; --panel:#f4f2e8; --ink:#23261c; --muted:#6c705e; --line:#cdc9b3; --soft:#e9e6d6;
+  --accent:#5f6f2a; --brass:#9a7b25; --good:#3f7d32; --bad:#b4432a; --warn:#9a7b25; --you:#5f6f2a; --shadow:#8a8d7d; --spx:#9a7b25; --onaccent:#f4f2e8;
+  --r-EXP:#3f7d32; --r-LATE:#9a7b25; --r-CORR:#c17a1f; --r-BEAR:#b4432a; --r-RECOV:#3d6f8f; --r-STAG:#7a4f8a;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#12150e; --panel:#1a1e15; --ink:#dcdfc9; --muted:#8e9580; --line:#2e3426; --soft:#222719;
+  --accent:#a8bb5c; --brass:#d1a94a; --good:#86c06a; --bad:#e0714f; --warn:#d1a94a; --you:#a8bb5c; --shadow:#7d8470; --spx:#d1a94a; --onaccent:#12150e; color-scheme:dark;
+  --r-EXP:#86c06a; --r-LATE:#d1a94a; --r-CORR:#e39a3c; --r-BEAR:#e0714f; --r-RECOV:#6fa9cc; --r-STAG:#b48ac4; }}
+:root[data-theme="dark"]{
+  --bg:#12150e; --panel:#1a1e15; --ink:#dcdfc9; --muted:#8e9580; --line:#2e3426; --soft:#222719;
+  --accent:#a8bb5c; --brass:#d1a94a; --good:#86c06a; --bad:#e0714f; --warn:#d1a94a; --you:#a8bb5c; --shadow:#7d8470; --spx:#d1a94a; --onaccent:#12150e; color-scheme:dark;
+  --r-EXP:#86c06a; --r-LATE:#d1a94a; --r-CORR:#e39a3c; --r-BEAR:#e0714f; --r-RECOV:#6fa9cc; --r-STAG:#b48ac4; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;}
+.mono,.stat .k,.stat .v,.sup .k,.sup .v,.tag,nav button,th,.mc,.badge{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+header{padding-block:16px 0;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));max-width:1280px;margin:0 auto}
+h1{font:32px/1 "Allerta Stencil",Impact,sans-serif;margin:0 0 4px;letter-spacing:.12em;color:var(--accent)}
+h2{font:14px/1.3 "Allerta Stencil",Impact,sans-serif;margin:0 0 10px;letter-spacing:.08em;text-transform:uppercase}
+h3{font-size:13px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.sub{color:var(--muted);font-size:12.5px}
+nav{display:flex;gap:4px;margin-top:12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:none;border:0;padding:8px 12px;color:var(--muted);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border-bottom:2px solid transparent}
+nav button.on{color:var(--ink);border-color:var(--accent);font-weight:600}
+main{max-width:1280px;margin:0 auto;padding-block:16px 60px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:2px;padding:14px 16px;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em} .stat .v{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--soft)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:5px 6px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:11.5px;color:var(--muted);font-weight:600}
+.scroll{overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .muted{color:var(--muted)}
+.event{border-left:3px solid var(--accent);padding:8px 12px;background:var(--soft);border-radius:6px;margin:10px 0}
+.event b{display:block;margin-bottom:2px}
+.moves{display:flex;flex-direction:column;gap:6px}
+.move{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:start;padding:8px 10px;border:1px solid var(--line);border-radius:2px;cursor:pointer;background:var(--panel)}
+.move:hover{border-color:var(--accent)}
+.move.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.move .nm{font-weight:600} .move .bl{font-size:12.5px;color:var(--muted)}
+.move .mc{text-align:right;font-size:12px;font-variant-numeric:tabular-nums;min-width:120px}
+.tag{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--brass);border:1px solid var(--brass);border-radius:1px;padding:0 4px;margin-left:6px;vertical-align:1px}
+.pill{background:none;border:1px solid var(--line);color:var(--ink);border-radius:2px;padding:3px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.pill.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+.move .mc b{font-size:15px}
+p{margin:8px 0}
+button.primary{background:var(--accent);color:var(--onaccent);border:0;border-radius:2px;padding:11px 16px;font:15px "Allerta Stencil",Impact,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+button.ghost{background:none;border:1px solid var(--line);color:var(--ink);border-radius:2px;padding:8px 12px;font:inherit;cursor:pointer}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+label.f{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}
+input,select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+input[type=number]{width:110px}
+canvas{width:100%;display:block}
+.tree{font-size:13px}
+.tree .root{font-weight:600;margin-bottom:6px}
+.br{display:grid;grid-template-columns:150px 54px minmax(0,1fr);gap:8px;align-items:start;padding:6px 0;border-top:1px dashed var(--line)}
+.bar{height:6px;border-radius:3px;background:var(--accent);margin-top:4px}
+.log li{margin-bottom:6px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.note{font-size:12px;color:var(--muted)}
+.hide{display:none}
+.endgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+details summary{cursor:pointer;font-weight:600}
+.supply{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--brass);border-radius:2px;padding:8px 12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.supply .cells{display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center}
+.sup .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.sup .v{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.sup .v .to{color:var(--brass)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}
+.chip{font:12px "IBM Plex Mono",ui-monospace,monospace;border:1px solid var(--line);border-radius:2px;padding:1px 6px;background:var(--soft)}
+.chip.chg{border-color:var(--brass)}
+.supply h4{margin:8px 0 0;font:11px "IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.subtitle{font:11px "IBM Plex Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+@media (max-width:600px){ header,main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))} .move{grid-template-columns:20px minmax(0,1fr)} .move .mc{grid-column:2;text-align:left} .br{grid-template-columns:110px 44px minmax(0,1fr)} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="row" style="justify-content:space-between">
+    <div>
+      <h1>WARGAME</h1>
+      <div class="subtitle">Portfolio campaign simulator · demo</div>
+      <div class="sub" id="srcline"></div>
+    </div>
+    <button class="ghost" id="themeBtn" title="Toggle theme">◐</button>
+  </div>
+  <nav>
+    <button data-tab="play" class="on">Campaign</button>
+    <button data-tab="lab">War room</button>
+    <button data-tab="setup">Setup</button>
+    <button data-tab="model">Intel</button>
+  </nav>
+</header>
+<main>
+  <section id="tab-play"></section>
+  <section id="tab-lab" class="hide"></section>
+  <section id="tab-setup" class="hide"></section>
+  <section id="tab-model" class="hide"></section>
+</main>
+<script>window.PORTFOLIO = {"source": "Demo portfolio \u00b7 fictional $10M", "demo": true, "built": "2026-11-07T16:11", "modified": "2026-11-07T16:11", "accounts": [{"id": "Brokerage", "role": "main", "label": "Taxable brokerage", "taxable": true, "cash": 220000, "holdings": [{"ticker": "VOO", "name": "Vanguard S&P 500;ETF", "price": 675.96, "beta": 1.0, "type": "ETF", "high52": 718.47, "tech": 0.3, "intl": 0.0, "idio": 0.01, "kind": "US core", "shares": 5029.883, "cost": 2108000.0}, {"ticker": "SPY", "name": "State Street SPDR S&P500", "price": 735.36, "beta": 0.988, "type": "ETF", "high52": 781.62, "tech": 0.3, "intl": 0.0, "idio": 0.01, "kind": "US core", "shares": 2039.817, "cost": 675000.0}, {"ticker": "SCHG", "name": "Schwab Str:US LC Gro ETF", "price": 33.135, "beta": 1.209, "type": "ETF", "high52": 37.1, "tech": 0.6, "intl": 0.0, "idio": 0.03, "kind": "US growth", "shares": 7544.892, "cost": 187500.0}, {"ticker": "EFA", "name": "iShares:MSCI EAFE", "price": 101.89, "beta": 0.955, "type": "ETF", "high52": 108.89, "tech": 0.05, "intl": 1.0, "idio": 0.03, "kind": "International", "shares": 3925.802, "cost": 340000.0}, {"ticker": "BBJP", "name": "JPMorgan:BB Japan", "price": 71.56, "beta": 0.85, "type": "ETF", "high52": 80.52, "tech": 0.1, "intl": 1.0, "idio": 0.05, "kind": "International", "shares": 2794.857, "cost": 180000.0}, {"ticker": "BBCA", "name": "JPMorgan:BB Canada ETF", "price": 103.51, "beta": 1.03, "type": "ETF", "high52": 108.06, "tech": 0.0, "intl": 1.0, "idio": 0.05, "kind": "International", "shares": 1932.18, "cost": 176000.0}, {"ticker": "KDEF", "name": "PLUS Korea Def Indus Idx", "price": 28.4756, "beta": 1.0, "type": "ETF", "high52": 67.41, "tech": 0.0, "intl": 1.2, "idio": 0.22, "kind": "Thematic", "shares": 1755.889, "cost": 80000.0}, {"ticker": "BRK.B", "name": "BERKSHIRE HATHAWAY INC.", "price": 571.06, "beta": 0.552, "type": "Stock", "high52": 586.3, "tech": 0.0, "intl": 0.0, "idio": 0.07, "kind": "Quality value", "shares": 700.452, "cost": 300000.0}, {"ticker": "MA", "name": "MASTERCARD INCORPORATED", "price": 652.745, "beta": 0.756, "type": "Stock", "high52": 681.99, "tech": 0.2, "intl": 0.0, "idio": 0.09, "kind": "Quality compounder", "shares": 459.598, "cost": 210000.0}, {"ticker": "SPGI", "name": "S&P GLOBAL INC.", "price": 467.65, "beta": 1.012, "type": "Stock", "high52": 522.3501, "tech": 0.2, "intl": 0.0, "idio": 0.09, "kind": "Quality compounder", "shares": 213.835, "cost": 105000.0}, {"ticker": "NVDA", "name": "NVIDIA CORPORATION", "price": 186.64, "beta": 2.27, "type": "Stock", "high52": 243.37, "tech": 1.2, "intl": 0.0, "idio": 0.15, "kind": "Semiconductors", "shares": 2946.85, "cost": 220000.0}, {"ticker": "ASML", "name": "ASML Holding N.V.", "price": 1424.75, "beta": 1.828, "type": "Stock", "high52": 1999.96, "tech": 1.2, "intl": 0.4, "idio": 0.16, "kind": "Semiconductors", "shares": 245.657, "cost": 402500.0}, {"ticker": "GOOGL", "name": "ALPHABET INC.", "price": 284.78, "beta": 1.213, "type": "Stock", "high52": 408.61, "tech": 0.9, "intl": 0.0, "idio": 0.13, "kind": "Mega-cap tech", "shares": 1755.741, "cost": 550000.0}, {"ticker": "AMZN", "name": "AMAZON.COM, INC.", "price": 259.3, "beta": 1.46, "type": "Stock", "high52": 287.2, "tech": 0.8, "intl": 0.0, "idio": 0.13, "kind": "Mega-cap tech", "shares": 1735.442, "cost": 360000.0}, {"ticker": "MSFT", "name": "MICROSOFT CORPORATION", "price": 530.61, "beta": 1.026, "type": "Stock", "high52": 559.15, "tech": 0.8, "intl": 0.0, "idio": 0.1, "kind": "Mega-cap tech", "shares": 753.849, "cost": 340000.0}, {"ticker": "AAPL", "name": "APPLE INC.", "price": 342.37, "beta": 1.081, "type": "Stock", "high52": 355.38, "tech": 0.7, "intl": 0.0, "idio": 0.1, "kind": "Mega-cap tech", "shares": 876.245, "cost": 210000.0}, {"ticker": "TSM", "name": "Taiwan Semiconductor Manufacturing Company Limited", "price": 375.22, "beta": 1.48, "type": "Stock", "high52": 487.47, "tech": 1.2, "intl": 0.4, "idio": 0.16, "kind": "Semiconductors", "shares": 266.51, "cost": 85000.0}, {"ticker": "BKNG", "name": "BOOKING HOLDINGS INC.", "price": 160.665, "beta": 1.097, "type": "Stock", "high52": 220.806, "tech": 0.3, "intl": 0.2, "idio": 0.12, "kind": "Quality compounder", "shares": 497.93, "cost": 88000.0}]}], "bankNet": 250000};</script>
+<script>
+// Market + portfolio engine for the wargame. No DOM code here.
+// Each game year is two 6-month steps. Regime-switching Monte Carlo calibrated to US history (live check in the Model tab):
+// long-run S&P ≈ 9.4%/yr mean, ≈18% vol, ~45% chance of a 20%+ drawdown in any 5-year window,
+// ~17% chance a 5-year span ends below where it started. A valuation haircut (default 2%/yr)
+// lowers expected returns because US stocks start this game expensive.
+(function () {
+  "use strict";
+
+  // Half-year parameters: [mean, vol] of US market, tech/AI factor, international-vs-US factor; cash yield per half.
+  const REGIMES = [
+    { id: "EXP", name: "Expansion", us: [0.08, 0.068], tech: [0.01, 0.06], intl: [0.0, 0.05], cash: 0.020,
+      desc: "Steady growth. The most common state." },
+    { id: "LATE", name: "Late-cycle / frothy", us: [0.065, 0.09], tech: [0.035, 0.10], intl: [-0.01, 0.05], cash: 0.022,
+      desc: "Narrow, stretched rally. Usually ends in a slowdown." },
+    { id: "CORR", name: "Correction / slowdown", us: [-0.04, 0.09], tech: [-0.03, 0.09], intl: [0.01, 0.06], cash: 0.020,
+      desc: "Stocks off 10–20%. Recovery or recession, about even odds." },
+    { id: "BEAR", name: "Recession / bear market", us: [-0.13, 0.125], tech: [-0.05, 0.12], intl: [-0.01, 0.07], cash: 0.012,
+      desc: "Stocks down 20%+. Typically lasts 1–1.5 years." },
+    { id: "RECOV", name: "Recovery", us: [0.16, 0.10], tech: [0.03, 0.10], intl: [0.0, 0.06], cash: 0.010,
+      desc: "Rebound while the news still looks bad." },
+    { id: "STAG", name: "Inflation / stagflation", us: [-0.025, 0.10], tech: [-0.04, 0.09], intl: [0.025, 0.07], cash: 0.025,
+      desc: "Sticky inflation. Growth suffers; value and cash hold up." },
+  ];
+  const RIDX = Object.fromEntries(REGIMES.map((r, i) => [r.id, i]));
+
+  // Half-year transition matrix (rows = from, cols = to), order as REGIMES.
+  const T = [
+    [0.67, 0.18, 0.09, 0.02, 0.00, 0.04],
+    [0.19, 0.49, 0.20, 0.06, 0.00, 0.06],
+    [0.28, 0.06, 0.22, 0.16, 0.24, 0.04],
+    [0.00, 0.00, 0.10, 0.32, 0.58, 0.00],
+    [0.64, 0.06, 0.10, 0.03, 0.17, 0.00],
+    [0.14, 0.02, 0.22, 0.18, 0.12, 0.32],
+  ];
+
+  // Where we are now (Nov 2026, from the spreadsheet's 52-week data): S&P ~6% below its high, mega-cap tech and
+  // semis 20–30% below highs, KDEF −58%. That reads as a tech-led wobble late in the cycle.
+  const START_AUTO = [0.25, 0.35, 0.35, 0.05, 0.0, 0.0];
+
+  // Event cards: p = rough base chance per half-year, m = multiplier by regime (EXP, LATE, CORR, BEAR, RECOV, STAG).
+  // Effects are added to the factor returns for that turn (us/tech/intl) or to individual tickers (tk).
+  const EVENTS = [
+    { id: "capex", title: "AI capex digestion", p: 0.09, m: [0.7, 1.5, 1.4, 1.5, 0.6, 1.0],
+      text: "Big tech cuts AI spending. Chips sell off.",
+      fx: { tech: -0.10, tk: { NVDA: -0.12, ASML: -0.08, TSM: -0.08 } } },
+    { id: "aiwin", title: "AI productivity surprise", p: 0.08, m: [1.4, 1.5, 0.6, 0.3, 1.2, 0.5],
+      text: "AI shows up in earnings. Tech rallies.",
+      fx: { us: 0.03, tech: 0.08 } },
+    { id: "taiwan", title: "Taiwan Strait crisis", p: 0.015, m: [1, 1, 1.2, 1.3, 1, 1.2],
+      text: "Blockade drills halt shipping. Chip supply at risk.",
+      fx: { us: -0.06, tech: -0.06, tk: { TSM: -0.30, ASML: -0.15, NVDA: -0.15, AAPL: -0.08, KDEF: 0.10 } } },
+    { id: "fedcut", title: "Fed cuts aggressively", p: 0.04, m: [0.3, 0.3, 3.5, 4.5, 1.5, 0.3],
+      text: "Rates cut fast. Stocks up, cash yields down.",
+      fx: { us: 0.04, cash: -0.006 } },
+    { id: "infl", title: "Inflation re-accelerates", p: 0.07, m: [0.8, 1.5, 0.6, 0.2, 0.8, 3.0],
+      text: "Hot CPI, yields spike. Growth stocks hit.",
+      fx: { us: -0.04, tech: -0.04, intl: 0.01, cash: 0.004, tk: { BBCA: 0.04, "BRK.B": 0.03 } } },
+    { id: "tariff", title: "Trade-war escalation", p: 0.09, m: [1, 1.2, 1.2, 1, 0.8, 1.3],
+      text: "New tariffs and retaliation.",
+      fx: { us: -0.04, intl: -0.03, tk: { AAPL: -0.06, AMZN: -0.04, TSM: -0.04, BBCA: -0.03 } } },
+    { id: "oil", title: "Oil price shock", p: 0.04, m: [0.7, 1, 1, 1, 0.5, 3.0],
+      text: "Crude up 40%. Consumers hurt, Canada gains.",
+      fx: { us: -0.03, intl: -0.01, tk: { BBCA: 0.07, BKNG: -0.06 } } },
+    { id: "antitrust", title: "Big Tech antitrust ruling", p: 0.05, m: [1, 1, 1, 1, 1, 1],
+      text: "Courts order a Big Tech breakup remedy.",
+      fx: { tk: { GOOGL: -0.12, AMZN: -0.05, AAPL: -0.04 } } },
+    { id: "kdefup", title: "Korean defense export wave", p: 0.05, m: [1, 1, 1, 1, 1, 1.2],
+      text: "Big tank and artillery export deals.",
+      fx: { tk: { KDEF: 0.25 } } },
+    { id: "kdefdn", title: "Peace dividend scare", p: 0.04, m: [1, 1, 1, 1, 1, 1],
+      text: "Ceasefires and budget cuts hit defense.",
+      fx: { tk: { KDEF: -0.15 } } },
+    { id: "earn", title: "Blowout earnings season", p: 0.10, m: [1.5, 1.3, 0.5, 0.2, 1.6, 0.5],
+      text: "Most companies beat and raise.",
+      fx: { us: 0.03 } },
+    { id: "dollar", title: "Dollar slides", p: 0.07, m: [1, 1, 1.2, 1, 1, 1.5],
+      text: "Dollar −8%. Foreign stocks gain.",
+      fx: { intl: 0.05 } },
+    { id: "credit", title: "Private-credit blowup", p: 0.035, m: [0.5, 1.5, 2, 2, 0.5, 1.5],
+      text: "A fund gates withdrawals. Credit tightens.",
+      fx: { us: -0.06, tk: { SPGI: -0.04, MA: -0.03 } } },
+    { id: "japan", title: "Japan governance rally", p: 0.05, m: [1, 1, 1, 1, 1, 1],
+      text: "Reforms pull money into Japan.",
+      fx: { tk: { BBJP: 0.08 } } },
+    { id: "expense", title: "Surprise personal expense", p: 0.07, m: [1, 1, 1, 1, 1, 1],
+      text: "$4,000 due. Banks hold only {bank} net, so it comes from {main}.",
+      fx: { expense: 4000 } },
+  ];
+
+  // ---------- RNG ----------
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function gauss(rng) {
+    let u = 0, v = 0;
+    while (u === 0) u = rng();
+    v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  function pick(rng, probs) {
+    const u = rng(); let c = 0;
+    for (let i = 0; i < probs.length; i++) { c += probs[i]; if (u < c) return i; }
+    return probs.length - 1;
+  }
+
+  // ---------- Ticker universe ----------
+  function buildUniverse(data) {
+    const TK = {};
+    for (const a of data.accounts) for (const h of a.holdings) {
+      if (!TK[h.ticker]) TK[h.ticker] = {
+        ticker: h.ticker, name: h.name, type: h.type, kind: h.kind, price: h.price,
+        beta: h.type === "ETF" ? h.beta : 0.6 * h.beta + 0.4, // shrink noisy single-stock betas toward 1
+        tech: h.tech, intl: h.intl, idio: h.idio, high52: h.high52 || h.price, low52: h.low52 || h.price,
+      };
+    }
+    return TK;
+  }
+
+  function eventProbs(r) {
+    const ps = EVENTS.map(e => e.p * e.m[r]);
+    const s = ps.reduce((a, b) => a + b, 0);
+    const scale = s > 0.85 ? 0.85 / s : 1;
+    return ps.map(p => p * scale);
+  }
+
+  // Average effect of event cards, so events add shocks (fat tails) without dragging the long-run averages
+  // away from the calibrated regime means. Computed once over the long-run regime mix.
+  function stationary() { let pi = REGIMES.map(() => 1 / 6);
+    for (let k = 0; k < 400; k++) pi = pi.map((_, j) => pi.reduce((s, x, i) => s + x * T[i][j], 0)); return pi; }
+  let BIAS = null;
+  function eventBias() {
+    if (BIAS) return BIAS;
+    const pi = stationary();
+    BIAS = { us: 0, tech: 0, intl: 0, tk: {} };
+    REGIMES.forEach((_, r) => { const ep = eventProbs(r);
+      EVENTS.forEach((e, i) => { const w = pi[r] * ep[i];
+        BIAS.us += w * (e.fx.us || 0); BIAS.tech += w * (e.fx.tech || 0); BIAS.intl += w * (e.fx.intl || 0);
+        if (e.fx.tk) for (const t in e.fx.tk) BIAS.tk[t] = (BIAS.tk[t] || 0) + w * e.fx.tk[t]; }); });
+    return BIAS;
+  }
+
+  // One half-year of market outcomes. Does not depend on the player's portfolio, so a seed fixes the whole future.
+  function drawTurn(rng, prevR, TK, S) {
+    const r = pick(rng, T[prevR]);
+    const R = REGIMES[r];
+    const hair = (S.haircut || 0) / 2;
+    let us = R.us[0] - hair + R.us[1] * gauss(rng);
+    let tech = R.tech[0] + R.tech[1] * gauss(rng);
+    let intl = R.intl[0] + R.intl[1] * gauss(rng);
+    let cash = R.cash;
+    let ev = null;
+    const ep = eventProbs(r);
+    const u = rng(); let c = 0;
+    for (let i = 0; i < EVENTS.length; i++) { c += ep[i]; if (u < c) { ev = EVENTS[i]; break; } }
+    const fx = ev ? ev.fx : {}, B = eventBias();
+    us += (fx.us || 0) - B.us; tech += (fx.tech || 0) - B.tech; intl += (fx.intl || 0) - B.intl; cash += fx.cash || 0;
+    const ret = {};
+    for (const t in TK) {
+      const k = TK[t];
+      let x = k.beta * us + k.tech * tech + k.intl * intl + k.idio * gauss(rng);
+      if (k.type === "Stock") { const j = rng(); if (j < 0.025) x -= 0.25; else if (j > 0.975) x += 0.20; }
+      x += ((fx.tk && fx.tk[t]) || 0) - (B.tk[t] || 0);
+      ret[t] = Math.max(-0.85, x);
+    }
+    return { r, us, tech, intl, mkt: us + 0.3 * tech, cash: Math.max(0, cash), ev, ret, expense: fx.expense || 0 };
+  }
+
+  function genPath(seed, H, startR, TK, S) {
+    const rng = mulberry32(seed);
+    const path = []; let prev = startR;
+    for (let t = 0; t < H; t++) { const d = drawTurn(rng, prev, TK, S); path.push(d); prev = d.r; }
+    return path;
+  }
+
+  // ---------- Portfolio ----------
+  function initPortfolio(data, TK) {
+    const p = { accts: [], prices: {}, peaks: {}, lossCarry: 0, taxPaid: 0, turnTax: 0,
+      bankNet: data.bankNet, spx: 1, spxPeak: 1, spxTrough: 1, out: false };
+    for (const t in TK) { p.prices[t] = TK[t].price; p.peaks[t] = Math.max(TK[t].high52, TK[t].price); }
+    for (const a of data.accounts) p.accts.push({
+      id: a.id, role: a.role, label: a.label, taxable: a.taxable, cash: a.cash,
+      pos: a.holdings.map(h => ({ t: h.ticker, sh: h.shares, cost: h.cost })),
+    });
+    p.startMix = p.accts.map(a => mixOf(p, a));
+    const core = Object.values(TK).find(k => k.kind === "US core"); // S&P index starts below its 52-week high
+    p.spxPeak = core ? core.high52 / core.price : 1;
+    return p;
+  }
+  const clone = p => JSON.parse(JSON.stringify(p));
+  const acct = (p, id) => p.accts.find(a => a.id === id);
+  const main = p => p.accts.find(a => a.role === "main") || p.accts[0]; // where savings land and spare cash is spent
+  const posVal = (p, h) => h.sh * p.prices[h.t];
+  const acctVal = (p, a) => a.cash + a.pos.reduce((s, h) => s + posVal(p, h), 0);
+  const total = p => p.accts.reduce((s, a) => s + acctVal(p, a), 0) + (p.bankNet || 0);
+  function embeddedTax(p, S) {
+    let g = 0;
+    for (const a of p.accts) if (a.taxable) for (const h of a.pos) g += posVal(p, h) - h.cost;
+    return Math.max(0, g - p.lossCarry) * S.ltcg;
+  }
+  const afterTax = (p, S) => total(p) - embeddedTax(p, S);
+
+  function category(TK, t) { return (TK[t] && TK[t].kind) || "Stock"; }
+  function mixOf(p, a) {
+    const v = acctVal(p, a) || 1, m = { Cash: a.cash / v };
+    for (const h of a.pos) { const c = category(Model.TK, h.t); m[c] = (m[c] || 0) + posVal(p, h) / v; }
+    return m;
+  }
+
+  function sell(p, a, t, dollars, S) {
+    const i = a.pos.findIndex(h => h.t === t); if (i < 0) return 0;
+    const h = a.pos[i], px = p.prices[t];
+    const sh = Math.min(h.sh, Math.max(0, dollars) / px); if (sh <= 1e-9) return 0;
+    const basis = h.cost * (sh / h.sh), proceeds = sh * px;
+    h.sh -= sh; h.cost -= basis; a.cash += proceeds;
+    if (a.taxable) {
+      let g = proceeds - basis;
+      if (g < 0) p.lossCarry += -g;
+      else { const off = Math.min(g, p.lossCarry); p.lossCarry -= off; g -= off;
+        const tax = g * S.ltcg; a.cash -= tax; p.taxPaid += tax; p.turnTax += tax; }
+    }
+    if (h.sh < 1e-7) a.pos.splice(i, 1);
+    return proceeds;
+  }
+  function buy(p, a, t, dollars) {
+    dollars = Math.min(dollars, a.cash); if (dollars < 1 || !t || !p.prices[t]) return 0;
+    let h = a.pos.find(x => x.t === t);
+    if (!h) { h = { t, sh: 0, cost: 0 }; a.pos.push(h); }
+    h.sh += dollars / p.prices[t]; h.cost += dollars; a.cash -= dollars;
+    return dollars;
+  }
+  // Sell $ from a set of tickers in an account, highest cost-basis-per-dollar first (least tax).
+  function sellTaxSmart(p, a, tickers, dollars, S) {
+    const hs = a.pos.filter(h => tickers.includes(h.t))
+      .sort((x, y) => (y.cost / posVal(p, y)) - (x.cost / posVal(p, x)));
+    let left = dollars, got = 0;
+    for (const h of hs) { if (left <= 1) break; const v = Math.min(left, posVal(p, h)); got += sell(p, a, h.t, v, S); left -= v; }
+    return got;
+  }
+  const isStock = t => Model.TK[t] && Model.TK[t].type === "Stock";
+  // Groups come from each holding's `kind` (set in build.py), so they follow the spreadsheet.
+  const ofKind = (...kinds) => Object.keys(Model.TK).filter(t => kinds.includes(Model.TK[t].kind));
+  const heldValue = (p, t) => p.accts.reduce((s, a) => s + a.pos.filter(h => h.t === t).reduce((q, h) => q + posVal(p, h), 0), 0);
+  const largest = (p, list) => list.slice().sort((x, y) => heldValue(p, y) - heldValue(p, x))[0];
+  const CORE = () => ofKind("US core");
+  const TECH = () => ofKind("Semiconductors", "Mega-cap tech");
+  const coreFund = p => largest(p, CORE()) || largest(p, Object.keys(Model.TK));
+  const qualityPick = p => largest(p, ofKind("Quality value")) || largest(p, ofKind("Quality compounder")) || coreFund(p);
+  const intlFund = p => largest(p, ofKind("International"));
+  const growthFund = p => largest(p, ofKind("US growth")) || coreFund(p);
+  const spare = (a, S) => Math.max(0, a.cash - S.reserve);
+  // Sell then rebuy in the same account using only the after-tax proceeds (never dips into the cash reserve).
+  function swap(p, a, sellFn, buyT) { const c0 = a.cash; sellFn(); const got = Math.max(0, a.cash - c0); if (buyT) buy(p, a, buyT, got); return got; }
+
+  // ---------- Moves ----------
+  // Each apply(p, S, arg) mutates p and returns a short summary. `opts` describes a move's choices for the UI.
+  const MOVES = [
+    { id: "HOLD", name: "Hold steady", blurb: "", apply: () => "No trades." },
+    { id: "DEPLOY", name: "Invest spare cash", blurb: "Spare cash into your S&P fund.",
+      opts: { f: [[0.5, "Half"], [1, "All"]] }, def: { f: 1 },
+      apply(p, S, arg) { const f = (arg || this.def).f, a = main(p), t = coreFund(p), amt = spare(a, S) * f;
+        buy(p, a, t, amt); let other = 0;
+        if (f === 1) for (const b of p.accts) if (b !== a && b.cash > 100) { other += b.cash; buy(p, b, b.role === "growth" ? growthFund(p) : t, b.cash); }
+        return `Invested ${fmt(amt)} in ${t}${other > 1 ? `, plus ${fmt(other)} of idle cash elsewhere` : ""}.`; } },
+    { id: "BUY_DIP", name: "Buy your beaten-down stocks", blurb: "Spare cash into your 3 stocks furthest off their peaks.",
+      apply(p, S) { const a = main(p), amt = spare(a, S);
+        const c = Object.keys(Model.TK).filter(isStock).map(t => [t, p.prices[t] / p.peaks[t] - 1]).sort((x, y) => x[1] - y[1]).slice(0, 3);
+        c.forEach(([t]) => buy(p, a, t, amt / c.length));
+        return amt > 1 ? `Bought ${fmt(amt / c.length)} each of ${c.map(([t, d]) => `${t} (${pct(d)} from peak)`).join(", ")}.` : "No spare cash above your reserve."; } },
+    { id: "TRIM", name: "Trim concentrated stocks", blurb: "Any stock over your cap goes back to the cap. Roth first.",
+      apply(p, S) { const cap = S.cap * total(p), core = coreFund(p), out = [];
+        for (const t of Object.keys(Model.TK).filter(isStock)) {
+          let excess = heldValue(p, t) - cap; if (excess <= 1) continue; out.push(`${t} −${fmt(excess)}`);
+          for (const a of [...p.accts].sort((x, y) => x.taxable - y.taxable)) { if (excess <= 1) break; const h = a.pos.find(x => x.t === t); if (!h) continue;
+            const s = Math.min(excess, posVal(p, h)); swap(p, a, () => sell(p, a, t, s, S), core); excess -= s; } }
+        return out.length ? `Trimmed ${out.join(", ")} → ${core}.` : `No stock is above ${pct(S.cap)} of net worth.`; } },
+    { id: "CUT_TECH", name: "Cut tech & semis", blurb: "Sell part of every chip and big-tech stock.",
+      opts: { f: [[0.25, "25%"], [0.5, "50%"]], to: [["core", "into S&P"], ["quality", "into quality"]] }, def: { f: 0.25, to: "core" },
+      apply(p, S, arg) { arg = arg || this.def; const dest = arg.to === "quality" ? qualityPick(p) : coreFund(p); let moved = 0;
+        for (const a of p.accts) for (const t of TECH()) { const h = a.pos.find(x => x.t === t); if (!h) continue;
+          moved += swap(p, a, () => sell(p, a, t, posVal(p, h) * arg.f, S), dest); }
+        return `Moved ${fmt(moved)} from tech into ${dest}.`; } },
+    { id: "TRADE", name: "Trade one position", blurb: "Buy or sell any one holding.",
+      opts: { side: [["sell", "Sell"], ["buy", "Buy"]], f: [[0.1, "10%"], [0.25, "25%"], [0.5, "50%"], [1, "All"]] }, def: { side: "sell", t: null, f: 0.25 },
+      apply(p, S, arg) { arg = arg || this.def; const t = arg.t; if (!t || !p.prices[t]) return "Nothing selected.";
+        if (arg.side === "buy") { const a = main(p), amt = spare(a, S) * arg.f; buy(p, a, t, amt);
+          return amt > 1 ? `Bought ${fmt(amt)} of ${t}.` : "No spare cash above your reserve."; }
+        let got = 0; const tax0 = p.turnTax;
+        for (const a of p.accts) { const h = a.pos.find(x => x.t === t); if (h) got += swap(p, a, () => sell(p, a, t, posVal(p, h) * arg.f, S)); }
+        return got > 0 ? `Sold ${Math.round(arg.f * 100)}% of ${t}: ${fmt(got)} to cash after ${fmt(p.turnTax - tax0)} tax.` : `You don't hold ${t}.`; } },
+    { id: "INTL", name: "Diversify abroad", blurb: "5% of net worth from S&P into international.",
+      apply(p, S) { const a = main(p), t = intlFund(p); if (!t) return "No international fund to buy.";
+        const got = swap(p, a, () => sellTaxSmart(p, a, CORE(), 0.05 * total(p), S), t); return `Moved ${fmt(got)} into ${t}.`; } },
+    { id: "TLH", name: "Tax-loss harvest", blurb: "Book losses on positions 5%+ below cost. Same exposure.",
+      apply(p, S) { let loss = 0; const names = [];
+        for (const a of p.accts) if (a.taxable) for (const h of a.pos) { const v = posVal(p, h);
+          if (v < h.cost * 0.95) { loss += h.cost - v; names.push(h.t); h.cost = v; } }
+        p.lossCarry += loss;
+        return loss > 0 ? `Harvested ${fmt(loss)} of losses (${names.join(", ")}).` : "Nothing is 5% below cost."; } },
+    { id: "REBAL", name: "Rebalance to starting mix", blurb: "Back to today's mix in each account.",
+      apply(p, S) { let traded = 0;
+        p.accts.forEach((a, i) => {
+          const tgt = p.startMix[i], cur = mixOf(p, a), v = acctVal(p, a);
+          for (const c in cur) if (c !== "Cash" && cur[c] > (tgt[c] || 0) + 0.01) {
+            const tks = a.pos.filter(h => category(Model.TK, h.t) === c).map(h => h.t); const amt = (cur[c] - (tgt[c] || 0)) * v;
+            sellTaxSmart(p, a, tks, amt, S); traded += amt; }
+          const after = mixOf(p, a), v2 = acctVal(p, a), extra = a.cash - (tgt.Cash || 0) * v2;
+          const under = Object.keys(tgt).filter(c => c !== "Cash" && (after[c] || 0) < tgt[c]);
+          const gap = under.reduce((s, c) => s + tgt[c] - (after[c] || 0), 0);
+          if (extra > 1 && gap > 0) for (const c of under) {
+            const h = a.pos.filter(x => category(Model.TK, x.t) === c).sort((x, y) => posVal(p, y) - posVal(p, x))[0];
+            if (h) buy(p, a, h.t, extra * (tgt[c] - (after[c] || 0)) / gap);
+          }
+        });
+        return `Rebalanced about ${fmt(traded)}.`; } },
+    { id: "DERISK", hidden: true, name: "Raise cash broadly", // used only by the Lab's panic-seller rule
+      apply(p, S) { let raised = 0;
+        for (const a of p.accts) for (const h of [...a.pos]) if (isStock(h.t) || ["US growth", "Thematic"].includes(category(Model.TK, h.t)))
+          raised += swap(p, a, () => sell(p, a, h.t, posVal(p, h) * 0.25, S));
+        return `Raised ${fmt(raised)} cash after tax.`; } },
+  ];
+  const MOVE = Object.fromEntries(MOVES.map(m => [m.id, m]));
+  // Moves that can't happen in the same year: they spend the same spare cash, or one undoes the other.
+  const EXCLUSIVE = [["DEPLOY", "BUY_DIP", "TRADE"]];
+  function conflicts(a, b) {
+    if (a === b) return false;
+    if (a === "HOLD" || b === "HOLD") return true;
+    if (a === "REBAL" || b === "REBAL") return a !== "TLH" && b !== "TLH";
+    return EXCLUSIVE.some(g => g.includes(a) && g.includes(b));
+  }
+
+  // One line of guidance per market state, shown in the year-in-review once that state is known.
+  const PLAYBOOK = {
+    EXP: "Stay invested. Calm markets are the time to trim concentration. Don't hoard cash.",
+    LATE: "Trim winners (Roth first, no tax), tilt toward quality, keep a cash reserve. Don't chase.",
+    CORR: "Invest in tranches, not all at once. Harvest losses. Buy quality names on sale.",
+    BEAR: "Don't sell the core. Harvest losses and put the reserve to work while prices are low.",
+    RECOV: "The rebound usually comes before the good news. Finish investing cash and rebalance.",
+    STAG: "Favor pricing power and value. International and short-term cash help. Don't add long-duration growth.",
+  };
+
+  // If-then orders: set at the start of a year, checked once at mid-year (after the first 6 months).
+  function stopList(p) {
+    return Object.keys(Model.TK).filter(t => isStock(t) && p.prices[t] / p.peaks[t] < 0.65 && heldValue(p, t) > 0);
+  }
+  const TRIGGERS = [
+    { id: "dip", name: "Buy the dip", text: "S&P 10%+ off peak → invest spare cash.",
+      test: p => p.spx / p.spxPeak < 0.9, act: (p, S) => MOVE.DEPLOY.apply(p, S, { f: 1 }) },
+    { id: "harvest", name: "Harvest losses", text: "Position 5%+ below cost → harvest the loss.",
+      test: p => p.accts.some(a => a.taxable && a.pos.some(h => posVal(p, h) < h.cost * 0.95)), act: (p, S) => MOVE.TLH.apply(p, S) },
+    { id: "trim", name: "Bank a run-up", text: "S&P up 12%+ → trim concentrated stocks.",
+      test: p => p.spx / (p.spxDecision || p.spx) > 1.12, act: (p, S) => MOVE.TRIM.apply(p, S) },
+    { id: "stop", name: "Stop-loss", text: "Stock 35%+ off peak → sell half.",
+      test: p => stopList(p).length > 0,
+      act: (p, S) => { const L = stopList(p); let got = 0;
+        for (const t of L) for (const a of p.accts) { const h = a.pos.find(x => x.t === t); if (h) got += swap(p, a, () => sell(p, a, t, posVal(p, h) * 0.5, S)); }
+        return `Sold half of ${L.join(", ")} (${fmt(got)} to cash).`; } },
+  ];
+  const T2 = T.map(row => T.map((_, j) => row.reduce((s, x, k) => s + x * T[k][j], 0))); // one-year odds
+
+  // ---------- Turn engine ----------
+  function applyMarket(p, d, S) {
+    for (const t in d.ret) { p.prices[t] *= 1 + d.ret[t]; p.peaks[t] = Math.max(p.peaks[t], p.prices[t]); }
+    for (const a of p.accts) a.cash *= 1 + d.cash;
+    const m = main(p);
+    m.cash += S.monthly * 6;
+    if (d.expense) { m.cash -= d.expense; if (m.cash < 0) sellTaxSmart(p, m, CORE(), -m.cash * 1.25, S); }
+    p.spx *= 1 + d.mkt; p.spxPeak = Math.max(p.spxPeak, p.spx); p.spxTrough = Math.min(p.spxTrough, p.spx);
+  }
+  function yearEnd(p, S) {
+    const use = Math.min(3000, p.lossCarry); p.lossCarry -= use;
+    const saved = use * S.ordinary; main(p).cash += saved; p.taxPaid -= saved;
+  }
+
+  // Monte Carlo of the remaining horizon. startR is a market state, or an array of odds to draw one per future.
+  function scenarios(seed, n, H, startR, TK, S) {
+    const out = [], rng = mulberry32(seed ^ 0x9e3779b9);
+    for (let i = 0; i < n; i++) out.push(genPath((seed * 7919 + i * 104729) >>> 0, H, Array.isArray(startR) ? pick(rng, startR) : startR, TK, S));
+    return out;
+  }
+  function runPolicy(p0, paths, S, policy, turnOffset) {
+    const ends = [], afters = [], dds = [], series = [];
+    for (const path of paths) {
+      const p = clone(p0); let peak = afterTax(p, S), mdd = 0; const ser = [peak];
+      for (let t = 0; t < path.length; t++) {
+        p.turnTax = 0;
+        if (policy) policy(p, t, S);
+        applyMarket(p, path[t], S);
+        if ((t + turnOffset) % 2 === 1) yearEnd(p, S);
+        const v = afterTax(p, S); peak = Math.max(peak, v); mdd = Math.min(mdd, v / peak - 1); ser.push(v);
+      }
+      ends.push(total(p)); afters.push(afterTax(p, S)); dds.push(mdd); series.push(ser);
+    }
+    return { ends, afters, dds, series };
+  }
+  function quant(arr, q) { const s = [...arr].sort((a, b) => a - b); const i = (s.length - 1) * q, lo = Math.floor(i);
+    return s[lo] + (s[Math.min(lo + 1, s.length - 1)] - s[lo]) * (i - lo); }
+  function summarize(res, v0) {
+    return { p10: quant(res.afters, 0.1), p50: quant(res.afters, 0.5), p90: quant(res.afters, 0.9),
+      pLoss: res.afters.filter(x => x < v0).length / res.afters.length,
+      pDD20: res.dds.filter(x => x < -0.2).length / res.dds.length,
+      ddMed: quant(res.dds, 0.5) };
+  }
+
+  // Whole-horizon policies for the Strategy Lab (they only see prices, never the hidden market state).
+  const POLICIES = {
+    hold: { name: "Buy & hold", desc: "Never trade.", fn: null },
+    deploy: { name: "Invest cash as it comes", desc: "Invest spare cash every 6 months.", fn: (p, t, S) => MOVE.DEPLOY.apply(p, S, { f: 1 }) },
+    dip: { name: "Dip buyer", desc: "Invest only when the S&P is 10%+ off peak.", fn: (p, t, S) => { if (p.spx / p.spxPeak < 0.9) MOVE.DEPLOY.apply(p, S, { f: 1 }); } },
+    disciplined: { name: "Disciplined", desc: "Trim yearly, harvest losses, buy 10% dips.",
+      fn: (p, t, S) => { if (t % 2 === 0) MOVE.TRIM.apply(p, S);
+        MOVE.TLH.apply(p, S); if (p.spx / p.spxPeak < 0.9) MOVE.DEPLOY.apply(p, S, { f: 1 }); } },
+    derisk: { name: "De-risk now", desc: "Move half of tech into quality, then hold.",
+      fn: (p, t, S) => { if (t === 0) MOVE.CUT_TECH.apply(p, S, { f: 0.5, to: "quality" }); } },
+    panic: { name: "Panic seller", desc: "Sell 25% after a 15% drop, rebuy after a 20% rebound.",
+      fn: (p, t, S) => {
+        if (!p.out && p.spx / p.spxPeak < 0.85) { MOVE.DERISK.apply(p, S); p.out = true; p.spxTrough = p.spx; }
+        else if (p.out && p.spx / p.spxTrough > 1.2) { MOVE.DEPLOY.apply(p, S, { f: 1 }); p.out = false; }
+      } },
+  };
+
+  function fmt(x) { const s = x < 0 ? "−" : ""; x = Math.abs(x);
+    return s + (x >= 1e6 ? "$" + (x / 1e6).toFixed(2) + "M" : x >= 1e4 ? "$" + Math.round(x / 1e3) + "k" : "$" + Math.round(x).toLocaleString()); }
+  function pct(x, d = 0) { return (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(x * 100).toFixed(d) + "%"; }
+
+  const Model = { conflicts, stationary, REGIMES, RIDX, T, T2, TRIGGERS, START_AUTO, EVENTS, MOVES, MOVE, PLAYBOOK, POLICIES, TK: null,
+    mulberry32, pick, drawTurn, genPath, buildUniverse, initPortfolio, clone, acct, main, acctVal, posVal, total, afterTax,
+    embeddedTax, applyMarket, yearEnd, scenarios, runPolicy, summarize, quant, sell, buy, fmt, pct, eventProbs, heldValue };
+  window.Model = Model;
+})();
+
+</script>
+<script>
+// UI for the Portfolio Wargame. Engine lives in model.js; holdings in data.js (built from the spreadsheet).
+(function () {
+  "use strict";
+  const M = Model, D = window.PORTFOLIO;
+  M.TK = M.buildUniverse(D);
+  const fmt = M.fmt, pct = M.pct;
+  const $ = s => document.querySelector(s);
+  const ord = n => n + ((n % 100 >= 11 && n % 100 <= 13) ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // ---------- Settings ----------
+  const DEFAULTS = { years: 5, haircut: 0.02, ltcg: 0.15, ordinary: 0.12, reserve: 10000, monthly: 500, cap: 0.05,
+    start: "auto", previewN: 400, labN: 2000 };
+  let S = Object.assign({}, DEFAULTS);
+  try { Object.assign(S, JSON.parse(localStorage.getItem("wg-settings") || "{}")); } catch (e) {}
+  const saveS = () => { try { localStorage.setItem("wg-settings", JSON.stringify(S)); } catch (e) {} };
+
+  // ---------- Theme ----------
+  try { const th = localStorage.getItem("wg-theme"); if (th) document.documentElement.dataset.theme = th; } catch (e) {}
+  $("#themeBtn").onclick = () => {
+    const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+    const cur = document.documentElement.dataset.theme || (dark ? "dark" : "light");
+    const nxt = cur === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = nxt;
+    try { localStorage.setItem("wg-theme", nxt); } catch (e) {}
+    renderAll();
+  };
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const rcol = r => css("--r-" + M.REGIMES[r].id);
+
+  // ---------- Tabs ----------
+  let tab = "play";
+  document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+    tab = b.dataset.tab;
+    document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));
+    document.querySelectorAll("main > section").forEach(s => s.classList.toggle("hide", s.id !== "tab-" + tab));
+    renderAll();
+  });
+  $("#srcline").textContent = D.demo ? D.source : `Data: ${D.source}, ${D.modified.slice(0, 10)} · local only`;
+
+
+
+  // ---------- Dates (from when the spreadsheet was last saved) ----------
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const START = new Date(D.modified);
+  const halfLabel = i => { const m = START.getMonth() + 6 * i; return `${MONTHS[m % 12]} ${START.getFullYear() + Math.floor(m / 12)}`; };
+  const yearLabel = t => halfLabel(2 * t);
+  const evText = e => e.text.replace("{bank}", fmt(D.bankNet)).replace("{main}", (D.accounts.find(a => a.role === "main") || D.accounts[0]).id);
+
+  // ---------- Game ----------
+  // One yardstick everywhere: after-tax net worth vs. simply holding through the same market.
+  let G = null;
+  const visibleMoves = () => M.MOVES.filter(m => !m.hidden);
+  const planIds = () => [...G.plan].filter(id => id !== "HOLD");
+  const trigs = () => M.TRIGGERS.filter(tg => G.trig.has(tg.id));
+  const lastState = () => (G.t === 0 ? null : G.path[2 * G.t - 1].r);           // past states are fair to know
+  const belief = () => (G.t === 0 ? M.START_AUTO : lastState());               // today's state is not
+  const nextYearOdds = () => { const b = belief();
+    return Array.isArray(b) ? M.REGIMES.map((_, j) => b.reduce((s, x, i) => s + x * M.T2[i][j], 0)) : M.T2[b]; };
+  const gap = () => M.afterTax(G.p, S) - M.afterTax(G.shadow, S);
+
+  function newGame(seed) {
+    if (seed === undefined) seed = (Math.random() * 2 ** 31) >>> 0;
+    const startR = S.start === "auto" ? M.pick(M.mulberry32(seed ^ 0x5bd1e995), M.START_AUTO) : M.RIDX[S.start];
+    const p = M.initPortfolio(D, M.TK);
+    G = { seed, H: S.years, startR, path: M.genPath(seed, 2 * S.years, startR, M.TK, S), t: 0, p, shadow: M.clone(p),
+      hist: [], log: [], plan: new Set(["HOLD"]), trig: new Set(), cache: null,
+      args: { DEPLOY: { f: 1 }, CUT_TECH: { f: 0.25, to: "core" }, TRADE: { side: "sell", t: biggestStock(p), f: 0.25 } } };
+    G.hist.push(histPoint());
+    const base = M.runPolicy(p, M.scenarios(seed + 99991, 800, 2 * G.H, S.start === "auto" ? M.START_AUTO : startR, M.TK, S), S, null, 0);
+    G.baseAfters = base.afters.slice().sort((a, b) => a - b);
+    newTurn();
+    renderPlay();
+  }
+  const histPoint = () => ({ you: M.afterTax(G.p, S), hold: M.afterTax(G.shadow, S), spx: G.p.spx });
+  function biggestStock(p) {
+    const v = {}; for (const a of p.accts) for (const h of a.pos) v[h.t] = (v[h.t] || 0) + M.posVal(p, h) * (M.TK[h.t].type === "Stock" ? 10 : 1);
+    return Object.entries(v).sort((a, b) => b[1] - a[1])[0][0];
+  }
+
+  // ---------- Simulation (cached per year; a click only recomputes what it changed) ----------
+  function newTurn() {
+    if (!G.p.prices[G.args.TRADE.t] || (G.args.TRADE.side === "sell" && !M.heldValue(G.p, G.args.TRADE.t))) G.args.TRADE.t = biggestStock(G.p);
+    const paths = M.scenarios((G.seed * 31 + G.t * 7 + 1) >>> 0, S.previewN, 2 * (G.H - G.t), belief(), M.TK, S);
+    G.cache = { paths, stats: {}, v0: M.afterTax(G.p, S) };
+    G.cache.hold = run([], []);
+  }
+  function applyPlan(p, ids) { p.spxDecision = p.spx; return ids.map(id => M.MOVE[id].apply(p, S, G.args[id])); }
+  function run(ids, tgs) {
+    let fired = 0;
+    const r = M.runPolicy(G.p, G.cache.paths, S, (p, k) => {
+      if (k === 0) applyPlan(p, ids);
+      else if (k === 1 && tgs.length) { let f = false; for (const tg of tgs) if (tg.test(p)) { tg.act(p, S); f = true; } if (f) fired++; }
+    }, 2 * G.t);
+    r.fired = fired / G.cache.paths.length; return r;
+  }
+  function stat(ids, tgs) {
+    const key = JSON.stringify([ids, tgs.map(t => t.id), ids.map(id => G.args[id] || null)]);
+    if (G.cache.stats[key]) return G.cache.stats[key];
+    const C = G.cache, r = ids.length || tgs.length ? run(ids, tgs) : C.hold;
+    const sm = M.summarize(r, C.v0), diff = r.afters.map((x, i) => x - C.hold.afters[i]);
+    Object.assign(sm, { d10: M.quant(diff, 0.1), d50: M.quant(diff, 0.5), d90: M.quant(diff, 0.9),
+      pWin: diff.filter(x => x > 1).length / diff.length, fired: r.fired, br: {}, brd: {} });
+    C.paths.forEach((pa, i) => { const k = pa[1].r;
+      (sm.br[k] = sm.br[k] || []).push(r.series[i][2] / r.series[i][0] - 1); });
+    sm.band = r.series[0].map((_, k) => { const col = r.series.map(s => s[k]); return [M.quant(col, 0.1), M.quant(col, 0.5), M.quant(col, 0.9)]; });
+    const c = M.clone(G.p); c.turnTax = 0; sm.would = applyPlan(c, ids); sm.taxNow = c.turnTax; sm.after = c;
+    return (C.stats[key] = sm);
+  }
+
+  // ---------- Commit a year ----------
+  function commit() {
+    const p = G.p, ids = planIds(), tg = trigs(), gap0 = gap(), v0 = M.afterTax(p, S);
+    const did = applyPlan(p, ids), tax = p.turnTax;
+    const before = Object.assign({}, p.prices);
+    const h1 = G.path[2 * G.t], h2 = G.path[2 * G.t + 1];
+    M.applyMarket(p, h1, S); M.applyMarket(G.shadow, h1, S); G.hist.push(histPoint());
+    const fired = []; for (const x of tg) if (x.test(p)) fired.push(`${x.name}: ${x.act(p, S)}`);
+    M.applyMarket(p, h2, S); M.applyMarket(G.shadow, h2, S);
+    M.yearEnd(p, S); M.yearEnd(G.shadow, S); G.hist.push(histPoint());
+    G.log.push({ year: yearLabel(G.t), h1, h2, names: ids.map(id => M.MOVE[id].name), did, fired, armed: tg.length, tax, before,
+      ret: M.afterTax(p, S) / v0 - 1, mkt: (1 + h1.mkt) * (1 + h2.mkt) - 1, gain: gap() - gap0 });
+    G.t++; p.turnTax = 0; G.plan = new Set(["HOLD"]);
+    if (G.t < G.H) newTurn();
+    renderPlay();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // ---------- Chart ----------
+  function lineChart(canvas, opt) {
+    const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = opt.height || 220;
+    canvas.width = w * dpr; canvas.height = h * dpr; canvas.style.height = h + "px";
+    const g = canvas.getContext("2d"); g.scale(dpr, dpr); g.clearRect(0, 0, w, h);
+    const n = opt.n, L = 54, R = 10, Tp = 10, B = 24;
+    let lo = Infinity, hi = -Infinity;
+    for (const s of opt.series) for (const v of s.data) if (v != null) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    for (const b of opt.bands || []) for (const x of b.data) { lo = Math.min(lo, x[0]); hi = Math.max(hi, x[1]); }
+    const pad = (hi - lo) * 0.08 || hi * 0.05; lo -= pad; hi += pad;
+    const X = i => L + (w - L - R) * (n <= 1 ? 0 : i / (n - 1)), Y = v => Tp + (h - Tp - B) * (1 - (v - lo) / (hi - lo));
+    g.font = "11px -apple-system, sans-serif"; g.fillStyle = css("--muted"); g.strokeStyle = css("--line"); g.lineWidth = 1;
+    for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4, y = Y(v);
+      g.beginPath(); g.moveTo(L, y); g.lineTo(w - R, y); g.stroke(); g.textAlign = "right"; g.fillText(fmt(v), L - 6, y + 4); }
+    g.textAlign = "center";
+    let step = Math.max(1, Math.ceil(n / Math.max(2, Math.floor((w - L) / 70)))); if (step % 2) step++;
+    for (let i = 0; i < n; i += step) g.fillText(opt.xl(i), X(i), h - 6);
+    for (const b of opt.bands || []) {
+      g.fillStyle = b.color; g.globalAlpha = 0.16; g.beginPath();
+      b.data.forEach((x, k) => { const i = b.x0 + k; k ? g.lineTo(X(i), Y(x[1])) : g.moveTo(X(i), Y(x[1])); });
+      for (let k = b.data.length - 1; k >= 0; k--) g.lineTo(X(b.x0 + k), Y(b.data[k][0]));
+      g.closePath(); g.fill(); g.globalAlpha = 1;
+    }
+    for (const s of opt.series) {
+      g.strokeStyle = s.color; g.lineWidth = s.width || 2; g.setLineDash(s.dash || []); g.beginPath(); let started = false;
+      s.data.forEach((v, k) => { if (v == null) return; const i = (s.x0 || 0) + k; started ? g.lineTo(X(i), Y(v)) : g.moveTo(X(i), Y(v)); started = true; });
+      g.stroke(); g.setLineDash([]);
+    }
+  }
+
+  // ---------- Play tab ----------
+  const sfmt = x => (Math.abs(x) < 500 ? "≈$0" : (x > 0 ? "+" : "") + fmt(x));
+  const cls = x => (x >= 0 ? "good" : "bad");
+  const stateDot = r => `<span class="dot" style="background:${rcol(r)}"></span>`;
+  const oddsLine = odds => odds.map((x, i) => [x, i]).filter(x => x[0] >= 0.05).sort((a, b) => b[0] - a[0])
+    .map(([x, i]) => `${stateDot(i)} ${M.REGIMES[i].name} ${Math.round(x * 100)}%`).join(" &nbsp; ");
+
+  // Sitrep: one headline, not a list. Tech = your chip and big-tech stocks, value-weighted.
+  const SHORT = { EXP: "expansion", LATE: "late-cycle", CORR: "a correction", BEAR: "a bear market", RECOV: "a recovery", STAG: "stagflation" };
+  const shortName = r => SHORT[M.REGIMES[r].id];
+  function techMove(fromPx) {
+    let v0 = 0, v1 = 0;
+    for (const a of G.p.accts) for (const h of a.pos) if (["Semiconductors", "Mega-cap tech"].includes(M.TK[h.t].kind)) { v0 += h.sh * fromPx(h.t); v1 += M.posVal(G.p, h); }
+    return v0 ? v1 / v0 - 1 : 0;
+  }
+  const techPhrase = x => (Math.abs(x) < 0.05 ? "tech flat" : `a ${Math.round(Math.abs(x) * 100)}% tech ${x < 0 ? "sell-off" : "rally"}`);
+  function situationHTML() {
+    const p = G.p, dd = p.spx / p.spxPeak - 1;
+    let head, body;
+    if (G.t === 0) {
+      const tm = techMove(t => M.TK[t].high52), top = M.START_AUTO.map((x, i) => [x, i]).sort((a, b) => b[0] - a[0]).slice(0, 2);
+      head = `Sitrep · ${yearLabel(0)}`;
+      body = `<p>${Math.abs(tm) >= 0.05 ? `Tech has sold off ${Math.round(-tm * 100)}% from its highs; the S&amp;P is ${Math.round(-dd * 100)}% off.` : `Markets are near their highs.`}
+        Most likely ${shortName(top[0][1])} or ${shortName(top[1][1])}.</p>`;
+    } else {
+      const L = G.log[G.log.length - 1], evs = [L.h1.ev, L.h2.ev].filter(Boolean).map(e => e.title);
+      const tm = techMove(t => L.before[t]);
+      head = `Sitrep · ${yearLabel(G.t)}`;
+      body = `<p>${evs.length ? esc(evs.join(", then ")) + "." : "A quiet year."}
+        S&amp;P <b class="${cls(L.mkt)}">${pct(L.mkt)}</b> with ${techPhrase(tm)}. Now ${shortName(L.h2.r)}.</p>
+        <p>Your calls: <b class="${cls(L.gain)}">${sfmt(L.gain)}</b>${L.fired.length ? ` · ${esc(L.fired.map(x => x.split(":")[0]).join(", "))} fired` : ""}</p>
+        <p class="note">Playbook: ${M.PLAYBOOK[M.REGIMES[L.h2.r].id]}</p>`;
+    }
+    return `<div class="card"><h2>${head}</h2>
+      <div class="stats">
+        <div class="stat"><div class="k">vs just holding</div><div class="v ${cls(gap())}">${sfmt(gap())}</div></div>
+        <div class="stat"><div class="k">S&amp;P off its peak</div><div class="v ${dd < -0.1 ? "bad" : ""}">${pct(dd)}</div></div>
+      </div>${body}</div>`;
+  }
+
+  // Supply line: cash and positions, always in view, showing what your plan would change.
+  let SUPPLY_OPEN = false;
+  function supplyHTML() {
+    const p = G.p, r = G.t < G.H && planIds().length ? stat(planIds(), trigs()) : null, q = r ? r.after : null;
+    const to = (now, then) => (q && Math.abs(then - now) > 1 ? ` <span class="to">→ ${fmt(then)}</span>` : "");
+    const spare = x => Math.max(0, M.main(x).cash - S.reserve);
+    const cells = [`<div class="sup"><div class="k">Net worth</div><div class="v">${fmt(M.afterTax(p, S))}</div></div>`,
+      ...p.accts.map(a => `<div class="sup"><div class="k">${a.id} cash</div><div class="v">${fmt(a.cash)}${to(a.cash, q && M.acct(q, a.id).cash)}</div></div>`),
+      `<div class="sup"><div class="k">Spare cash</div><div class="v">${fmt(spare(p))}${to(spare(p), q && spare(q))}</div></div>`];
+    const detail = SUPPLY_OPEN ? p.accts.map(a => {
+      const qa = q && M.acct(q, a.id), keys = [...new Set([...a.pos.map(h => h.t), ...(qa ? qa.pos.map(h => h.t) : [])])];
+      const val = (acc, x, t) => { const h = acc && acc.pos.find(y => y.t === t); return h ? M.posVal(x, h) : 0; };
+      const chips = keys.map(t => [t, val(a, p, t), qa ? val(qa, q, t) : null]).sort((x, y) => y[1] - x[1])
+        .map(([t, v, w]) => `<span class="chip ${w != null && Math.abs(w - v) > 1 ? "chg" : ""}">${t} ${fmt(v)}${w != null && Math.abs(w - v) > 1 ? ` → ${fmt(w)}` : ""}</span>`).join("");
+      return `<h4>${a.id} · ${esc(a.label)} · ${fmt(M.acctVal(p, a))}</h4><div class="chips">${chips}<span class="chip">Cash ${fmt(a.cash)}</span></div>`;
+    }).join("") + `<div class="note">Banks ${fmt(p.bankNet)} net${q ? " · gold = plan changes" : ""}</div>` : "";
+    return `<div class="supply"><div class="cells">${cells.join("")}
+      <button class="ghost" id="supToggle" style="margin-left:auto;padding:4px 10px">${SUPPLY_OPEN ? "Hide" : "Show"} positions</button></div>${detail}</div>`;
+  }
+
+  function optsHTML(mv) {
+    const a = G.args[mv.id], groups = [];
+    if (mv.id === "TRADE") {
+      groups.push(btns(mv.id, "side", mv.opts.side, a.side));
+      const list = a.side === "sell" ? [...new Set(G.p.accts.flatMap(x => x.pos.map(h => h.t)))] : Object.keys(M.TK);
+      groups.push(`<select class="optSel" data-mv="TRADE">${list.map(t => [t, M.heldValue(G.p, t)]).sort((x, y) => y[1] - x[1])
+        .map(([t, v]) => `<option value="${t}" ${t === a.t ? "selected" : ""}>${t}${v ? " · " + fmt(v) : ""}</option>`).join("")}</select>`);
+      groups.push(btns(mv.id, "f", mv.opts.f, a.f) + `<span class="note">${a.side === "sell" ? `≈ ${fmt(M.heldValue(G.p, a.t) * a.f)}` : `≈ ${fmt(Math.max(0, M.main(G.p).cash - S.reserve) * a.f)}`}</span>`);
+    } else for (const k in mv.opts) groups.push(btns(mv.id, k, mv.opts[k], a[k]));
+    return `<div class="row opts" style="margin-top:8px;gap:6px">${groups.join("")}</div>`;
+  }
+  const btns = (id, key, list, cur) => list.map(([v, label]) => `<button class="pill ${v === cur ? "on" : ""}" data-mv="${id}" data-k="${key}" data-v="${v}">${label}</button>`).join("");
+
+  function movesHTML() {
+    const single = visibleMoves().filter(m => m.id !== "HOLD").map(m => [m.id, stat([m.id], [])]);
+    const best = single.sort((a, b) => b[1].d50 - a[1].d50)[0];
+    const rows = visibleMoves().map(mv => {
+      const on = G.plan.has(mv.id), r = mv.id === "HOLD" ? null : stat([mv.id], []);
+      return `<div class="move ${on ? "sel" : ""}" data-mv="${mv.id}">
+        <input type="checkbox" ${on ? "checked" : ""} tabindex="-1">
+        <div><div class="nm">${mv.name}${best && best[0] === mv.id && best[1].d50 > 500 ? `<span class="tag">RECOMMENDED</span>` : ""}</div>
+          ${mv.blurb ? `<div class="bl">${mv.blurb}</div>` : ""}${on && mv.opts ? optsHTML(mv) : ""}</div>
+        <div class="mc">${r ? `<b class="${cls(r.d50)}">${sfmt(r.d50)}</b>` : `<span class="muted">baseline</span>`}</div></div>`;
+    }).join("");
+    return `<div class="card"><h2>1 · Courses of action</h2>
+      <p class="note">Pick any. Number = typical gain vs holding by ${yearLabel(G.H)}, after tax.</p>
+      <div class="moves">${rows}</div></div>`;
+  }
+
+  function triggersHTML() {
+    return `<div class="card"><h2>2 · Standing orders <span class="muted" style="font-weight:400">· checked ${halfLabel(2 * G.t + 1)}</span></h2>
+      <div class="moves">${M.TRIGGERS.map(tg => { const r = stat([], [tg]), on = G.trig.has(tg.id);
+        return `<div class="move ${on ? "sel" : ""}" data-tg="${tg.id}"><input type="checkbox" ${on ? "checked" : ""} tabindex="-1">
+          <div><div class="nm">${tg.name}</div><div class="bl">${tg.text} Fires ${Math.round(r.fired * 100)}%.</div></div>
+          <div class="mc">${r.fired > 0.005 ? `<b class="${cls(r.d50)}">${sfmt(r.d50)}</b>` : `<span class="muted">rare</span>`}</div></div>`; }).join("")}</div></div>`;
+  }
+
+  function planHTML() {
+    const ids = planIds(), tg = trigs(), r = stat(ids, tg), any = ids.length || tg.length;
+    return `<div class="card" style="border-color:var(--accent)"><h2>3 · Operation order · ${yearLabel(G.t)} → ${yearLabel(G.t + 1)}</h2>
+      <p style="margin:0 0 8px"><b>${ids.length ? ids.map(id => M.MOVE[id].name).join(" + ") : "Hold steady"}</b>${tg.length ? ` · if-then: ${tg.map(x => x.name).join(", ")}` : ""}</p>
+      ${any ? `<div class="stats">
+        <div class="stat"><div class="k">Bad case</div><div class="v ${cls(r.d10)}">${sfmt(r.d10)}</div></div>
+        <div class="stat"><div class="k">Typical</div><div class="v ${cls(r.d50)}">${sfmt(r.d50)}</div></div>
+        <div class="stat"><div class="k">Good case</div><div class="v ${cls(r.d90)}">${sfmt(r.d90)}</div></div>
+        <div class="stat"><div class="k">Tax now</div><div class="v">${fmt(r.taxNow)}</div></div></div>
+        <p class="note">vs holding by ${yearLabel(G.H)} · wins ${Math.round(r.pWin * 100)}% of the time${tg.length ? ` · orders fire ${Math.round(r.fired * 100)}%` : ""}</p>
+        ${ids.length ? `<ul class="note" style="margin:6px 0">${r.would.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}`
+        : `<p class="note">No trades.</p>`}
+      <p class="note">Market range by ${yearLabel(G.H)}: ${fmt(r.p10)} to ${fmt(r.p90)}</p>
+      <button class="primary" id="commitBtn" style="width:100%">Execute orders · ${yearLabel(G.t)} → ${yearLabel(G.t + 1)}</button></div>`;
+  }
+
+  function treeHTML() {
+    const odds = nextYearOdds(), r = stat(planIds(), trigs()), maxp = Math.max(...odds);
+    const rows = odds.map((x, j) => [x, j]).filter(x => x[0] >= 0.03).sort((a, b) => b[0] - a[0]).map(([x, j]) => {
+      const arr = r.br[j] || [], med = arr.length >= 5 ? M.quant(arr, 0.5) : null;
+      return `<div class="br"><div>${stateDot(j)} <b>${M.REGIMES[j].name}</b><div class="bar" style="width:${x / maxp * 100}%;background:${rcol(j)}"></div></div>
+        <div><b>${Math.round(x * 100)}%</b></div><div>${med == null ? `<span class="muted">rare</span>` : `book <b class="${cls(med)}">${pct(med, 1)}</b>`}</div></div>`;
+    }).join("");
+    return `<div class="card tree"><h2>Threat assessment · ${yearLabel(G.t + 1)}</h2>
+${rows}</div>`;
+  }
+
+  function chartHTML() {
+    return `<div class="card"><h2>Campaign track · after-tax net worth</h2><canvas id="histChart"></canvas>
+      <div class="legend"><span><i style="background:var(--you)"></i>You</span><span><i style="background:var(--shadow)"></i>Just holding</span>
+      <span><i style="background:var(--spx)"></i>S&amp;P 500</span>${G.t < G.H ? `<span><i style="background:var(--you);opacity:.3;height:8px"></i>bad–good range with your plan</span>` : ""}</div></div>`;
+  }
+  function drawHist() {
+    const c = $("#histChart"); if (!c) return;
+    const r = G.t < G.H ? stat(planIds(), trigs()) : null, v0 = G.hist[0].you;
+    lineChart(c, { n: 2 * G.H + 1, xl: halfLabel, height: 220,
+      bands: r ? [{ x0: 2 * G.t, data: r.band.map(b => [b[0], b[2]]), color: css("--you") }] : [],
+      series: [
+        { data: G.hist.map(h => h.spx / G.hist[0].spx * v0), color: css("--spx"), width: 1.5 },
+        { data: G.hist.map(h => h.hold), color: css("--shadow"), width: 1.5, dash: [4, 3] },
+        { data: G.hist.map(h => h.you), color: css("--you"), width: 2.5 },
+      ] });
+  }
+
+  function holdingsHTML() {
+    const p = G.p, tot = M.total(p), last = G.log[G.log.length - 1];
+    return `<div class="card"><details><summary>Order of battle · ${fmt(tot)} before tax</summary>${p.accts.map(a => {
+      const rows = a.pos.slice().sort((x, y) => M.posVal(p, y) - M.posVal(p, x)).map(h => {
+        const val = M.posVal(p, h), ch = last ? p.prices[h.t] / last.before[h.t] - 1 : null;
+        return `<tr><td><b>${h.t}</b></td><td>${fmt(val)}</td><td>${(val / tot * 100).toFixed(1)}%</td>
+          <td class="${ch == null ? "" : cls(ch)}">${ch == null ? "—" : pct(ch, 1)}</td><td class="${cls(val - h.cost)}">${fmt(val - h.cost)}</td></tr>`;
+      }).join("");
+      return `<h3>${a.id} · ${esc(a.label)} · ${fmt(M.acctVal(p, a))}</h3><div class="scroll"><table>
+        <tr><th>Holding</th><th>Value</th><th>% NW</th><th>Last year</th><th>Gain vs cost</th></tr>${rows}
+        <tr><td>Cash</td><td>${fmt(a.cash)}</td><td>${(a.cash / tot * 100).toFixed(1)}%</td><td></td><td></td></tr></table></div>`;
+    }).join("")}</details></div>`;
+  }
+
+  function endHTML() {
+    const at = M.afterTax(G.p, S), v0 = G.hist[0].you, cagr = (at / v0) ** (1 / G.H) - 1;
+    const luck = G.baseAfters.filter(x => x <= M.afterTax(G.shadow, S)).length / G.baseAfters.length;
+    let peak = 0, mdd = 0; for (const h of G.hist) { peak = Math.max(peak, h.you); mdd = Math.min(mdd, h.you / peak - 1); }
+    return `<div class="card" style="border-color:var(--accent)"><h2>After-action report · ${yearLabel(G.H)}</h2>
+      <div class="stats">
+        <div class="stat"><div class="k">Net worth after tax</div><div class="v">${fmt(at)}</div><div class="note">${pct(cagr, 1)}/yr</div></div>
+        <div class="stat"><div class="k">Skill: vs just holding</div><div class="v ${cls(gap())}">${sfmt(gap())}</div></div>
+        <div class="stat"><div class="k">Luck: market you drew</div><div class="v">${ord(Math.round(luck * 100))} pct</div></div>
+        <div class="stat"><div class="k">Worst drop</div><div class="v bad">${pct(mdd)}</div></div>
+      </div>
+      <div class="scroll"><table><tr><th>Year</th><th>Market</th><th>What you did</th><th>Book</th><th>vs holding</th></tr>
+      ${G.log.map(L => `<tr><td>${L.year}</td><td style="text-align:left">${stateDot(L.h1.r)}${stateDot(L.h2.r)} ${M.REGIMES[L.h2.r].name}</td>
+        <td style="text-align:left;white-space:normal">${esc([...(L.names.length ? L.names : ["Hold"]), ...L.fired.map(x => x.split(":")[0])].join(", "))}</td>
+        <td class="${cls(L.ret)}">${pct(L.ret, 1)}</td><td class="${cls(L.gain)}"><b>${sfmt(L.gain)}</b></td></tr>`).join("")}</table></div>
+      <p class="note">Skill = your calls vs holding. Luck = how good this market was.</p>
+      <div class="row"><button class="primary" id="replayBtn">Replay same market</button><button class="ghost" id="newBtn">New campaign</button>
+      <button class="ghost" id="copyBtn">Copy my playbook</button></div></div>`;
+  }
+
+  function logHTML() {
+    if (!G.log.length || G.t >= G.H) return "";
+    return `<div class="card"><details><summary>Operations log</summary><ol class="log">${G.log.map(L =>
+      `<li><b>${L.year}</b>: ${L.did.length ? L.did.map(esc).join(" ") : "Held."} ${L.fired.length ? "Orders: " + L.fired.map(esc).join(" ") : ""}
+      → ${M.REGIMES[L.h2.r].name}, book <span class="${cls(L.ret)}">${pct(L.ret, 1)}</span>, decisions <b class="${cls(L.gain)}">${sfmt(L.gain)}</b>.</li>`).join("")}</ol></details></div>`;
+  }
+
+  function renderPlay() {
+    const root = $("#tab-play");
+    if (!G) { root.innerHTML = ""; return; }
+    const over = G.t >= G.H, y = window.scrollY || 0;
+    const head = `<div class="row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">${over ? "Campaign complete" : `Turn ${G.t + 1} of ${G.H} · ${yearLabel(G.t)}`}</h2>
+      <span class="note">Seed ${G.seed} · <a href="#" id="restart">new campaign</a></span></div>`;
+    root.innerHTML = head + supplyHTML() + (over
+      ? `<div class="grid"><div>${endHTML()}</div><div>${chartHTML()}${holdingsHTML()}</div></div>`
+      : `<div class="grid"><div>${situationHTML()}${movesHTML()}${triggersHTML()}${planHTML()}</div>
+         <div>${chartHTML()}${treeHTML()}${logHTML()}
+         <p class="note">Practice tool, not advice.</p></div></div>`);
+    drawHist();
+    window.scrollTo(0, y);
+    const refresh = () => renderPlay();
+    root.querySelectorAll(".move[data-mv]").forEach(m => m.onclick = e => {
+      if (e.target.closest && e.target.closest(".opts")) return;
+      const id = m.dataset.mv;
+      if (id === "HOLD") G.plan = new Set(["HOLD"]);
+      else if (G.plan.has(id)) { G.plan.delete(id); if (!G.plan.size) G.plan.add("HOLD"); }
+      else { for (const x of [...G.plan]) if (M.conflicts(x, id)) G.plan.delete(x); G.plan.add(id); }
+      refresh(); });
+    root.querySelectorAll(".move[data-tg]").forEach(m => m.onclick = () => { const id = m.dataset.tg; G.trig.has(id) ? G.trig.delete(id) : G.trig.add(id); refresh(); });
+    root.querySelectorAll(".pill").forEach(b => b.onclick = e => { e.stopPropagation();
+      const a = G.args[b.dataset.mv], v = b.dataset.v; a[b.dataset.k] = isNaN(+v) ? v : +v;
+      if (b.dataset.k === "side" && v === "sell" && !M.heldValue(G.p, a.t)) a.t = biggestStock(G.p);
+      refresh(); });
+    root.querySelectorAll(".optSel").forEach(s => { s.onclick = e => e.stopPropagation(); s.onchange = () => { G.args[s.dataset.mv].t = s.value; refresh(); }; });
+    const cb = $("#commitBtn"); if (cb) cb.onclick = commit;
+    $("#supToggle").onclick = () => { SUPPLY_OPEN = !SUPPLY_OPEN; refresh(); };
+    const rs = $("#restart"); if (rs) rs.onclick = e => { e.preventDefault(); newGame(); };
+    if (over) {
+      $("#replayBtn").onclick = () => newGame(G.seed);
+      $("#newBtn").onclick = () => newGame();
+      $("#copyBtn").onclick = () => {
+        const txt = `Wargame playbook (seed ${G.seed})\n` + G.log.map(L =>
+          `${L.year}: ${L.did.join(" ") || "Held."}${L.fired.length ? " Orders: " + L.fired.join(" ") : ""} → ${M.REGIMES[L.h1.r].name} → ${M.REGIMES[L.h2.r].name}, book ${pct(L.ret, 1)}, vs holding ${sfmt(L.gain)}`).join("\n");
+        navigator.clipboard && navigator.clipboard.writeText(txt).then(() => { $("#copyBtn").textContent = "Copied"; }, () => {});
+      };
+    }
+  }
+
+  // ---------- Strategy Lab ----------
+  let LAB = null, labSel = "disciplined";
+  function runLab() {
+    const H = S.years * 2, p0 = M.initPortfolio(D, M.TK);
+    const paths = M.scenarios(424242, S.labN, H, S.start === "auto" ? M.START_AUTO : M.RIDX[S.start], M.TK, S);
+    const v0 = M.afterTax(p0, S), out = {}, hold = M.runPolicy(p0, paths, S, null, 0);
+    for (const k in M.POLICIES) {
+      const r = k === "hold" ? hold : M.runPolicy(p0, paths, S, M.POLICIES[k].fn, 0);
+      const sm = M.summarize(r, v0);
+      sm.d50 = M.quant(r.afters.map((x, i) => x - hold.afters[i]), 0.5);
+      sm.band = []; for (let t = 0; t <= H; t++) { const col = r.series.map(s => s[t]);
+        sm.band.push([M.quant(col, 0.1), M.quant(col, 0.25), M.quant(col, 0.5), M.quant(col, 0.75), M.quant(col, 0.9)]); }
+      out[k] = sm;
+    }
+    const ev = id => paths.filter(pa => pa.some(d => d.ev && d.ev.id === id)).length / paths.length;
+    const odds = {
+      bear: paths.filter(pa => pa.some(d => d.r === M.RIDX.BEAR)).length / paths.length,
+      stag: paths.filter(pa => pa.some(d => d.r === M.RIDX.STAG)).length / paths.length,
+      corr: paths.filter(pa => pa.some(d => d.r === M.RIDX.CORR)).length / paths.length,
+      taiwan: ev("taiwan"), capex: ev("capex"), expense: ev("expense"),
+    };
+    LAB = { out, odds, v0, H, n: paths.length };
+  }
+  function renderLab() {
+    const root = $("#tab-lab");
+    const head = `<div class="card"><h2>War room · strategy test</h2>
+      <p class="note">Each strategy vs the same ${S.labN.toLocaleString()} futures, ${S.years} years.</p>
+      <div class="row"><label class="f">Futures<input id="lN" type="number" value="${S.labN}" step="500" min="200" max="10000"></label>
+      <button class="primary" id="lGo" style="align-self:flex-end">Run simulation</button></div></div>`;
+    if (!LAB) { root.innerHTML = head + `<div class="card note">Press Run. It takes a second or two.</div>`; bindLab(); return; }
+    const rows = Object.entries(LAB.out).sort((a, b) => b[1].d50 - a[1].d50).map(([k, r]) => `<tr data-k="${k}" style="cursor:pointer;${k === labSel ? "background:var(--soft)" : ""}">
+      <td><b>${M.POLICIES[k].name}</b><div class="note" style="white-space:normal;max-width:340px">${M.POLICIES[k].desc}</div></td>
+      <td><b class="${r.d50 >= 0 ? "good" : "bad"}">${k === "hold" ? "baseline" : (Math.abs(r.d50) < 500 ? "≈$0" : (r.d50 > 0 ? "+" : "") + fmt(r.d50))}</b></td>
+      <td>${fmt(r.p10)}</td><td>${fmt(r.p50)}</td><td>${fmt(r.p90)}</td><td>${Math.round(r.pDD20 * 100)}%</td></tr>`).join("");
+    const o = LAB.odds;
+    root.innerHTML = head + `<div class="card"><h2>Results: after-tax net worth in ${S.years} years (today ${fmt(LAB.v0)})</h2><div class="scroll"><table>
+      <tr><th>Strategy</th><th>Typical vs holding</th><th>Bad case</th><th>Typical</th><th>Good case</th><th>Chance of a 20%+ drop</th></tr>${rows}</table></div>
+      <p class="note">Click a row to chart it.</p></div>
+      <div class="card"><h2>${M.POLICIES[labSel].name}: range of outcomes</h2><canvas id="labChart"></canvas>
+      <div class="legend"><span><i style="background:var(--you);opacity:.3;height:8px"></i>10–90% and 25–75% of futures</span><span><i style="background:var(--you)"></i>median</span><span><i style="background:var(--shadow)"></i>Buy &amp; hold median</span></div></div>
+      <div class="card"><h2>How often things happen in these ${S.years}-year futures</h2><div class="stats">
+        <div class="stat"><div class="k">At least one correction</div><div class="v">${Math.round(o.corr * 100)}%</div></div>
+        <div class="stat"><div class="k">Recession / bear market</div><div class="v">${Math.round(o.bear * 100)}%</div></div>
+        <div class="stat"><div class="k">Stagflation spell</div><div class="v">${Math.round(o.stag * 100)}%</div></div>
+        <div class="stat"><div class="k">AI capex shakeout</div><div class="v">${Math.round(o.capex * 100)}%</div></div>
+        <div class="stat"><div class="k">Taiwan Strait crisis</div><div class="v">${Math.round(o.taiwan * 100)}%</div></div>
+        <div class="stat"><div class="k">Surprise $4k expense</div><div class="v">${Math.round(o.expense * 100)}%</div></div>
+      </div></div>`;
+    const r = LAB.out[labSel], h = LAB.out.hold;
+    lineChart($("#labChart"), { n: LAB.H + 1, xl: halfLabel, height: 260,
+      bands: [{ x0: 0, data: r.band.map(b => [b[0], b[4]]), color: css("--you") }, { x0: 0, data: r.band.map(b => [b[1], b[3]]), color: css("--you") }],
+      series: [{ data: h.band.map(b => b[2]), color: css("--shadow"), width: 1.5, dash: [4, 3] }, { data: r.band.map(b => b[2]), color: css("--you"), width: 2.5 }] });
+    root.querySelectorAll("tr[data-k]").forEach(tr => tr.onclick = () => { labSel = tr.dataset.k; renderLab(); });
+    bindLab();
+  }
+  function bindLab() {
+    $("#lGo").onclick = () => {
+      S.labN = Math.max(200, Math.min(10000, +$("#lN").value || 2000)); saveS();
+      $("#lGo").textContent = "Running…"; $("#lGo").disabled = true;
+      setTimeout(() => { runLab(); renderLab(); }, 20);
+    };
+  }
+
+  // ---------- Setup ----------
+  function renderSetup() {
+    const f = (id, label, val, step, note) => `<label class="f">${label}<input id="${id}" type="number" step="${step}" value="${val}"><span class="note">${note}</span></label>`;
+    $("#tab-setup").innerHTML = `<div class="card"><h2>Game settings</h2><div class="row" style="align-items:flex-start;gap:18px">
+      <label class="f">Horizon<select id="sY"><option value="3" ${S.years == 3 ? "selected" : ""}>3 years (3 turns)</option><option value="5" ${S.years == 5 ? "selected" : ""}>5 years (5 turns)</option></select></label>
+      <label class="f">Starting market<select id="sStart"><option value="auto">Auto: weighted read of today</option>${M.REGIMES.map(r => `<option value="${r.id}" ${S.start === r.id ? "selected" : ""}>${r.name}</option>`).join("")}</select>
+        </label>
+      ${f("sHair", "Valuation haircut (%/yr)", S.haircut * 100, 0.5, "For high valuations. 0 = history.")}
+      ${f("sLt", "Capital-gains rate (%)", S.ltcg * 100, 1, "Federal LTCG + state.")}
+      ${f("sOrd", "Ordinary rate (%)", S.ordinary * 100, 1, "For loss deductions.")}
+      ${f("sRes", "Cash reserve to keep ($)", S.reserve, 1000, "Never spent.")}
+      ${f("sMon", "Monthly savings ($)", S.monthly, 100, "Into main account.")}
+      ${f("sCap", "Single-stock cap (% NW)", S.cap * 100, 1, "For Trim.")}
+      ${f("sPrev", "Futures per decision preview", S.previewN, 100, "More = slower.")}
+      </div><div class="row" style="margin-top:14px"><button class="primary" id="sSave">Save &amp; start new game</button></div></div>
+      <div class="card"><h2>Imported holdings</h2><div class="scroll"><table><tr><th>Ticker</th><th>Name</th><th>Accounts</th><th>Value</th><th>Beta</th><th>Tech load</th><th>Intl load</th><th>6-mo idio vol</th></tr>
+      ${Object.values(M.TK).map(k => { const acc = D.accounts.filter(a => a.holdings.some(h => h.ticker === k.ticker));
+        const v = acc.reduce((s, a) => s + a.holdings.filter(h => h.ticker === k.ticker).reduce((q, h) => q + h.shares * h.price, 0), 0);
+        return `<tr><td><b>${k.ticker}</b></td><td>${esc(k.name)}</td><td>${acc.map(a => a.id).join(", ")}</td><td>${fmt(v)}</td><td>${k.beta.toFixed(2)}</td><td>${k.tech}</td><td>${k.intl}</td><td>${pct(k.idio)}</td></tr>`; }).join("")}
+      </table></div>${D.demo ? "" : `<p class="note">Refresh: run <code>python3 build.py</code>, then reload.</p>`}</div>`;
+    $("#sSave").onclick = () => {
+      S.years = +$("#sY").value; S.start = $("#sStart").value; S.haircut = (+$("#sHair").value || 0) / 100; S.ltcg = (+$("#sLt").value || 0) / 100;
+      S.ordinary = (+$("#sOrd").value || 0) / 100; S.reserve = +$("#sRes").value || 0; S.monthly = +$("#sMon").value || 0; S.cap = (+$("#sCap").value || 5) / 100;
+      S.previewN = Math.max(100, Math.min(2000, +$("#sPrev").value || 400)); saveS(); LAB = null; newGame();
+      document.querySelector('nav button[data-tab="play"]').click();
+    };
+  }
+
+  // ---------- Model tab ----------
+  let CAL = null;
+  function calibrate() {
+    const rng = M.mulberry32(7), N = 4000, H = 10, S0 = Object.assign({}, S, { haircut: 0 });
+    const pi = M.stationary();
+    let anns = [], loss = 0, dd = 0, bear = 0;
+    for (let i = 0; i < N; i++) {
+      let s = M.pick(rng, pi), v = 1, pk = 1, md = 0, b = false, prev = 1;
+      for (let t = 0; t < H; t++) { const d = M.drawTurn(rng, s, {}, S0); s = d.r; v *= 1 + d.mkt;
+        pk = Math.max(pk, v); md = Math.min(md, v / pk - 1); b = b || s === M.RIDX.BEAR; if (t % 2) { anns.push(v / prev - 1); prev = v; } }
+      loss += v < 1; dd += md < -0.2; bear += b;
+    }
+    const mean = anns.reduce((a, b) => a + b, 0) / anns.length, sd = Math.sqrt(anns.reduce((a, b) => a + (b - mean) ** 2, 0) / anns.length);
+    CAL = { mean, sd, loss: loss / N, dd: dd / N, bear: bear / N, neg: anns.filter(x => x < 0).length / anns.length };
+  }
+  function renderModel() {
+    if (!CAL) calibrate();
+    const pi = M.stationary();
+    $("#tab-model").innerHTML = `<div class="card"><h2>How it works</h2>
+      <p>Six market states, switching every 6 months on historical odds. Each state drives the US market, tech and international; your holdings follow by beta, plus random shocks and event cards. Taxes tracked.</p>
+      <h3>Check vs history</h3><div class="stats">
+        <div class="stat"><div class="k">S&amp;P avg annual return</div><div class="v">${pct(CAL.mean, 1)}</div><div class="note">history ≈ +10–12% (arith.)</div></div>
+        <div class="stat"><div class="k">Annual volatility</div><div class="v">${pct(CAL.sd, 1).replace("+", "")}</div><div class="note">history ≈ 16–19%</div></div>
+        <div class="stat"><div class="k">Down years</div><div class="v">${Math.round(CAL.neg * 100)}%</div><div class="note">history ≈ 25–27%</div></div>
+        <div class="stat"><div class="k">20%+ drawdown in 5 yrs</div><div class="v">${Math.round(CAL.dd * 100)}%</div><div class="note">history ≈ 40–55%</div></div>
+        <div class="stat"><div class="k">5-yr span ends lower</div><div class="v">${Math.round(CAL.loss * 100)}%</div><div class="note">history ≈ 10–15%</div></div>
+        <div class="stat"><div class="k">Bear/recession in 5 yrs</div><div class="v">${Math.round(CAL.bear * 100)}%</div><div class="note">US recession every ~6 yrs</div></div>
+      </div><p class="note">Game uses a ${pct(S.haircut, 1)}/yr haircut for high valuations: about ${pct(CAL.mean - S.haircut, 1)}/yr.</p></div>
+      <div class="card"><h2>Market states</h2><div class="scroll"><table><tr><th>State</th><th>US return / 6 mo</th><th>Vol / 6 mo</th><th>Tech factor</th><th>Intl vs US</th><th>Cash yield / yr</th><th>Long-run share of time</th></tr>
+      ${M.REGIMES.map((r, i) => `<tr><td><span class="dot" style="background:${rcol(i)}"></span> <b>${r.name}</b></td><td>${pct(r.us[0], 1)}</td><td>${pct(r.us[1], 1).replace("+", "")}</td>
+        <td>${pct(r.tech[0], 1)}</td><td>${pct(r.intl[0], 1)}</td><td>${pct(r.cash * 2, 1)}</td><td>${Math.round(pi[i] * 100)}%</td></tr>`).join("")}</table></div></div>
+      <div class="card"><h2>Odds of the state one year from now</h2><div class="scroll"><table><tr><th>From \\ To</th>${M.REGIMES.map(r => `<th>${r.name.split(" ")[0]}</th>`).join("")}</tr>
+      ${M.T2.map((row, i) => `<tr><td><b>${M.REGIMES[i].name}</b></td>${row.map((x, j) => `<td style="background:color-mix(in srgb, ${rcol(j)} ${Math.round(x * 70)}%, transparent)">${x >= 0.005 ? Math.round(x * 100) + "%" : "·"}</td>`).join("")}</tr>`).join("")}</table></div>
+      <p class="note">Today's starting read (auto mode): ${M.START_AUTO.map((x, i) => x ? `${M.REGIMES[i].name} ${Math.round(x * 100)}%` : "").filter(Boolean).join(" · ")}.</p></div>
+      <div class="card"><h2>Event cards</h2><div class="scroll"><table><tr><th>Event</th><th>Base chance / yr</th><th>Most likely in</th><th>What it does</th></tr>
+      ${M.EVENTS.map(e => { const mx = Math.max(...e.m), most = e.m.map((x, i) => x === mx && mx > 1 ? M.REGIMES[i].name : null).filter(Boolean).join(", ") || "any";
+        const fx = []; if (e.fx.us) fx.push(`US ${pct(e.fx.us)}`); if (e.fx.tech) fx.push(`tech ${pct(e.fx.tech)}`); if (e.fx.intl) fx.push(`intl ${pct(e.fx.intl)}`);
+        if (e.fx.tk) for (const t in e.fx.tk) fx.push(`${t} ${pct(e.fx.tk[t])}`); if (e.fx.expense) fx.push(`−${fmt(e.fx.expense)} cash`);
+        return `<tr><td><b>${e.title}</b></td><td>${Math.round((1 - (1 - e.p) ** 2) * 100)}%</td><td>${most}</td><td style="white-space:normal">${fx.join(", ")}</td></tr>`; }).join("")}</table></div>
+      <p class="note">Event odds are judgment calls; edit in model.js.</p></div>
+      <div class="card note"><b>Limits:</b> no wash-sale rules, all gains long-term, calibrated to history, not a forecast.</div>`;
+  }
+
+  function renderAll() { if (tab === "play") renderPlay(); else if (tab === "lab") renderLab(); else if (tab === "setup") renderSetup(); else renderModel(); }
+  window.__wargame = { get G() { return G; }, renderPlay }; // test hook
+  window.addEventListener("resize", () => { if (tab === "play") drawHist(); else if (tab === "lab" && LAB) renderLab(); });
+  newGame();
+})();
+
+</script>
+
+</body>
+</html>
